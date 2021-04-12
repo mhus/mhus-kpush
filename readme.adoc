@@ -1,0 +1,45 @@
+== Purpose
+
+The tool will push local files into kubernetes containers to support
+local development in a kubernetes environment.
+
+The tool will use 'kubectl cp' and 'kubectl exec' to push and validate files
+in the container. No installation of components in the cluster are needed. Only
+a basic commandset 'bash', 'ls', 'mkdir', 'rm' is recommended in the container.
+
+== Configuration
+
+For each job push a yaml file in the configuration folder.
+
+Example
+
+----
+
+name: mhus to karaf
+description: push all changes in local repository mhus into the karaf container
+
+properties:
+- versions.properties
+
+target:
+  namespace: mhus
+  pod: server
+  container: karaf
+  
+watch:
+- name: Repo mhus
+  source: ~/.m2/repository/de/mhus
+  target: /home/user/.m2/repository/de/mhus
+  filter: 
+  - .*
+  
+----
+
+== Comands
+
+kpush watch
+
+kpush pushall
+
+kpush push
+
