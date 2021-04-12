@@ -46,6 +46,12 @@ public class KPush extends MLog {
         jobs.forEach(j -> j.push() );
     }
     
+    public void pushAll() {
+        jobs.forEach(j -> j.pushAll() );
+    }
+    
+
+    
     public void watch() {
         
         Console console = Console.get();
@@ -92,6 +98,5 @@ public class KPush extends MLog {
 
         jobs.forEach(j -> j.stopWatch() ); 
     }
-    
     
 }

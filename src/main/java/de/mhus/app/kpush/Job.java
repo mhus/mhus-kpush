@@ -33,7 +33,7 @@ public class Job extends MLog implements Runnable {
         pod = config.getString("pod");
         description = config.getString("description", "");
         for (IConfig watchC : config.getObjectList("watch"))
-            watches.add(new WatchDefault(this, watchC));
+            watches.add(WatchFactory.create(this, watchC));
     }
 
     public void startWatch() {
@@ -82,6 +82,16 @@ public class Job extends MLog implements Runnable {
         }
     }
     
+    public void pushAll() {
+        for (Watch watch : watches)
+            try {
+                if (!isRunning) break;
+                watch.pushAll();
+            } catch (Throwable t) {
+                log().e(t,name,watch.getName());
+            }
+    }
+   
     public void push() {
         for (Watch watch : watches)
             try {

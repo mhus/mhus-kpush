@@ -67,5 +67,7 @@ public abstract class Watch extends MLog {
         return fileCnt;
     }
 
+    protected abstract void pushAll();
+
 }
 

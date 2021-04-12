@@ -20,6 +20,9 @@ public class Main {
         case "push":
             inst.push();
             break;
+        case "pushall":
+            inst.pushAll();
+            break;
         default:
             System.out.println("Action unknown - aborting");
         }
