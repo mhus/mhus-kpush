@@ -29,13 +29,18 @@ public class KPush extends MLog {
             if (!file.isFile() || !file.getName().endsWith(".yaml"))
                 continue;
             
-            log().d("Load configuration",file);
-            IConfig config = M.l(IConfigFactory.class).read(file);
-            Job job = new Job(config, file);
-            jobs.add(job);
+            loadConfig(file);
         }
     }
     
+    private Job loadConfig(File file) throws MException {
+        log().d("Load configuration",file);
+        IConfig config = M.l(IConfigFactory.class).read(file);
+        Job job = new Job(config, file);
+        jobs.add(job);
+        return job;
+    }
+
     public void push() {
         jobs.forEach(j -> j.init() );
         jobs.forEach(j -> j.push() );
@@ -57,6 +62,29 @@ public class KPush extends MLog {
                 table.print();
                 
                 Thread.sleep(1000);
+                
+                for (Job job : new ArrayList<>( jobs )) {
+                    if (job.isConfigFileRemoved()) {
+                        log().i("config removed",job.getName());
+                        System.out.println(job.getName() + " removed");
+                        job.stopWatch();
+                        jobs.remove(job);
+                    } else
+                    if (job.isConfigFileChanged()) {
+                        log().i("config changed",job.getName());
+                        System.out.println(job.getName() + " changed");
+                        job.stopWatch();
+                        jobs.remove(job);
+                        try {
+                            job = loadConfig(job.getConfigFile());
+                            job.startWatch();
+                        } catch (MException e) {
+                            log().e(e);
+                        }
+                        
+                    }
+                }
+                
             }
         } catch (InterruptedException e) {
             System.out.println("Exited");

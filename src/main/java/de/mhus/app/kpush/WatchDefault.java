@@ -2,8 +2,6 @@ package de.mhus.app.kpush;
 
 import java.io.IOException;
 
-import de.mhus.lib.core.MFile;
-import de.mhus.lib.core.MProperties;
 import de.mhus.lib.core.MString;
 import de.mhus.lib.core.MSystem;
 import de.mhus.lib.core.MSystem.ScriptResult;

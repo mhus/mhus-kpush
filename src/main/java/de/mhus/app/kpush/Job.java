@@ -14,8 +14,8 @@ public class Job extends MLog implements Runnable {
     private IConfig config;
     private String name;
     private String description;
-    private File file;
-    private long fileModify;
+    private File cfgFile;
+    private long cfgFileModify;
     private volatile MThread thread;
     private volatile boolean isRunning = true;
     private ArrayList<Watch> watches = new ArrayList<>();
@@ -25,8 +25,8 @@ public class Job extends MLog implements Runnable {
 
     public Job(IConfig config, File file) throws MException {
         this.config = config;
-        this.file = file;
-        this.fileModify = file.lastModified();
+        this.cfgFile = file;
+        this.cfgFileModify = file.lastModified();
         name = config.getString("name");
         namespace = config.getString("namespace");
         container = config.getString("container");
@@ -117,6 +117,23 @@ public class Job extends MLog implements Runnable {
         IntValue fileCnt = new IntValue();
         watches.forEach(w -> fileCnt.value+=w.getFileCnt());
         return fileCnt.value;
+    }
+
+    public IConfig getConfig() {
+        return config;
+    }
+    
+    public boolean isConfigFileChanged() {
+        if (isConfigFileRemoved()) return true;
+        return cfgFile.lastModified() != cfgFileModify;
+    }
+    
+    public boolean isConfigFileRemoved() {
+        return !cfgFile.exists() && !cfgFile.isFile();
+    }
+
+    public File getConfigFile() {
+        return cfgFile;
     }
 
 }
