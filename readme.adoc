@@ -31,7 +31,7 @@ watch:
   source: ~/.m2/repository/de/mhus
   target: /home/user/.m2/repository/de/mhus
   filter: 
-  - .*
+  - contains ""
   
 ----
 
@@ -39,7 +39,7 @@ watch:
 
 kpush watch
 
-kpush pushall
+kpush push
 
 kpush push
 
