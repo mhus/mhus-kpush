@@ -32,7 +32,7 @@ public class WatchSimple extends Watch {
             forEachSourceFile( (f,n) -> {
                 if (f.lastModified() > lastUpdated) {
                     fileCnt--; 
-                    log().i("Init",name,n);
+                    log().i("Init",name,fileCnt,n);
                     try {
                         ScriptResult res = MSystem.execute(
                                 "/usr/local/bin/kubectl",
@@ -71,7 +71,7 @@ public class WatchSimple extends Watch {
         forEachSourceFile( (f,n) -> {
             if (f.lastModified() > lastUpdated) {
                 fileCnt--; 
-                log().i("Update",name,n);
+                log().i("Update",name,fileCnt,n);
                 pushToK8s(f, n);
             }
         });
@@ -87,7 +87,7 @@ public class WatchSimple extends Watch {
         });
         forEachSourceFile( (f,n) -> {
             fileCnt--; 
-            log().i("Update",name,n);
+            log().i("Update",name,fileCnt,n);
             pushToK8s(f,n);
         });
         lastUpdated = updateTime;
