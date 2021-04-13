@@ -1,6 +1,7 @@
 package de.mhus.app.kpush;
 
 import java.io.File;
+import java.util.List;
 import java.util.function.BiConsumer;
 
 import de.mhus.lib.core.MLog;
@@ -16,6 +17,7 @@ public abstract class Watch extends MLog {
     protected Job job;
     private File sourceDir;
     protected int fileCnt;
+    private List<IConfig> filters;
 
     public Watch(Job job, IConfig config) throws MException {
         this.job = job;
@@ -23,6 +25,8 @@ public abstract class Watch extends MLog {
         target = config.getString("target");
         name = config.getString("name", source);
         sourceDir = new File(source);
+        if (config.isArray("filter"))
+            filters = config.getObjectList("filter");
     }
 
     public abstract void init();
@@ -49,18 +53,45 @@ public abstract class Watch extends MLog {
         }
         
         for (File file : dir.listFiles()) {
-            if (!accepted(file))
+            String path = fName + "/" + file.getName();
+            if (!accepted(file, path))
                 continue;
             if (file.isFile())
-                action.accept(file, fName + "/" + file.getName());
+                action.accept(file, path);
             else
-                forEachSourceFile(action, file, fName + "/" + file.getName(), level+1);
+                forEachSourceFile(action, file, path, level+1);
         }
     }
 
-    protected boolean accepted(File file) {
-        // TODO implement filtering
-        return true;
+    protected boolean accepted(File file, String path) {
+        if (filters == null) return true;
+        for (IConfig filter : filters) {
+            String f = filter.getString("contains",null);
+            if (f != null && path.contains(f)) return true;
+            
+            f = filter.getString("notcontains",null);
+            if (f != null && path.contains(f)) return false;
+            
+            f = filter.getString("regex",null);
+            if (f != null && path.matches(f)) return true;
+            
+            f = filter.getString("notregex",null);
+            if (f != null && path.matches(f)) return false;
+            
+            f = filter.getString("namecontains",null);
+            if (f != null && file.getName().matches(f)) return true;
+            
+            f = filter.getString("notnamecontains",null);
+            if (f != null && file.getName().matches(f)) return false;
+            
+            f = filter.getString("dircontains",null);
+            if (f != null && file.isDirectory() && file.getName().matches(f)) return true;
+            
+            f = filter.getString("notdircontains",null);
+            if (f != null && file.isDirectory() && file.getName().matches(f)) return false;
+            
+        }
+        return false;
     }
 
     public int getFileCnt() {

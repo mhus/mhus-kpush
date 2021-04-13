@@ -2,13 +2,23 @@ package de.mhus.app.kpush;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
+import de.mhus.lib.core.MConstants;
 import de.mhus.lib.core.MString;
 import de.mhus.lib.core.MSystem;
 import de.mhus.lib.core.MSystem.ScriptResult;
 import de.mhus.lib.core.config.IConfig;
 import de.mhus.lib.errors.MException;
 
+/**
+ * This implementation will use the kubectl command cp and exec ls / mkdir to control the container.
+ * It will not delete files if removed locally.
+ * 
+ * @author mikehummel
+ *
+ */
 public class WatchSimple extends Watch {
 
     long lastUpdated = 0;
@@ -95,11 +105,11 @@ public class WatchSimple extends Watch {
 
     private void pushToK8s(File f, String n) {
         try {
-            ScriptResult res = MSystem.execute(
-                    "/usr/local/bin/kubectl",
-                    "--namespace",job.getNamespace(), 
-                    "-c", job.getContainer(), 
-                    "cp", f.getAbsolutePath(),job.getPod() + ":" + target + n);
+            List<String> cmd = kubectl();
+            cmd.add("cp");
+            cmd.add(f.getAbsolutePath());
+            cmd.add(job.getPod() + ":" + target + n);
+            ScriptResult res = MSystem.execute(cmd.toArray(MConstants.EMPTY_STRING_ARRAY));
             
             log().d(res);
 //                if (res.getError().contains("No such file or directory")) {
@@ -112,7 +122,10 @@ public class WatchSimple extends Watch {
                         "-c", job.getContainer(), 
                         "exec", job.getPod(), "--", "mkdir", "-p", target + dir);
                 log().d( res3 );
-                
+                if (res3.getRc() != 0) {
+                    log().e("can't create directory",target,dir);
+                    return;
+                }
                 //create
                 ScriptResult res4 = MSystem.execute(
                         "/usr/local/bin/kubectl",
@@ -120,6 +133,10 @@ public class WatchSimple extends Watch {
                         "-c", job.getContainer(), 
                         "cp", f.getAbsolutePath(),job.getPod() + ":" + target + n);
                 log().d( res4 );
+                if (res4.getRc() != 0) {
+                    log().e("can't create file",target,n);
+                    return;
+                }
                 
             }
             
@@ -130,5 +147,19 @@ public class WatchSimple extends Watch {
             e.printStackTrace();
         }
      }
+
+    private List<String> kubectl() {
+        LinkedList<String> cmd = new LinkedList<>();
+        cmd.add("/usr/local/bin/kubectl");
+        if (job.getNamespace() != null) {
+            cmd.add("--namespace");
+            cmd.add(job.getNamespace()); 
+        }
+        if (job.getContainer() != null) {
+            cmd.add("-c");
+            cmd.add(job.getContainer());
+        }
+        return cmd;
+    }
     
 }

@@ -28,8 +28,8 @@ public class Job extends MLog implements Runnable {
         this.cfgFile = file;
         this.cfgFileModify = file.lastModified();
         name = config.getString("name");
-        namespace = config.getString("namespace");
-        container = config.getString("container");
+        namespace = config.getString("namespace", null);
+        container = config.getString("container", null);
         pod = config.getString("pod");
         description = config.getString("description", "");
         for (IConfig watchC : config.getObjectList("watch"))
