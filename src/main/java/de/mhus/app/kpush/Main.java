@@ -9,7 +9,9 @@ public class Main {
         
         MArgs margs = new MArgs(args);
         
-        KPush inst = new KPush(margs.getValue("-c", 0));
+        KPush inst = new KPush();
+        inst.setArguments(margs);
+        inst.init();
         
         String action = margs.getValue(MArgs.DEFAULT, 0);
         if (action == null) action = "push";

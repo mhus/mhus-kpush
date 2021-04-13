@@ -23,13 +23,16 @@ import de.mhus.lib.errors.MException;
  */
 public class WatchSimple extends Watch {
 
-    long lastUpdated = 0;
+    long lastUpdated = System.currentTimeMillis();
     private File lastUpdatedFile;
     
     public WatchSimple(Job job, IConfig config) throws MException {
         super(job, config);
         lastUpdatedFile = new File(job.getConfigFile().getParent(), MFile.getFileNameOnly( job.getConfigFile().getName() ) + ".kpush" );
-        loadLastUpdated();
+        if (job.getKPush().getArguments().contains("r"))
+            lastUpdated = 0;
+        else
+            loadLastUpdated();
     }
 
     @Override
@@ -38,7 +41,7 @@ public class WatchSimple extends Watch {
         fileCnt = 0;
         long updateTime = System.currentTimeMillis();
         
-        if (job.getConfig().getBoolean("ignoreInit", false)) {
+        if (job.getConfig().getBoolean("ignoreInit", true)) {
             forEachSourceFile( (f,n) -> {
                 if (f.lastModified() > lastUpdated) {
                     fileCnt++; 
@@ -49,11 +52,14 @@ public class WatchSimple extends Watch {
                     fileCnt--; 
                     log().i("Init",name,fileCnt,n);
                     try {
-                        ScriptResult res = MSystem.execute(
-                                "/usr/local/bin/kubectl",
-                                "--namespace",job.getNamespace(), 
-                                "-c", job.getContainer(), 
-                                "exec", job.getPod(), "--", "ls", "-l", target + n);
+                        List<String> cmd = kubectl();
+                        cmd.add("exec");
+                        cmd.add(job.getPod());
+                        cmd.add("--");
+                        cmd.add("ls");
+                        cmd.add("-l");
+                        cmd.add(target + n);
+                        ScriptResult res = MSystem.execute(cmd.toArray(M.EMPTY_STRING_ARRAY));
     
                         log().d( res );
     //                    if (res.getError().contains("No such file or directory")) {
@@ -181,7 +187,7 @@ public class WatchSimple extends Watch {
 
     private List<String> kubectl() {
         LinkedList<String> cmd = new LinkedList<>();
-        cmd.add("/usr/local/bin/kubectl");
+        cmd.add( job.getConfig().getString("kubectl", "kubectl"));
         if (job.getNamespace() != null) {
             cmd.add("--namespace");
             cmd.add(job.getNamespace()); 

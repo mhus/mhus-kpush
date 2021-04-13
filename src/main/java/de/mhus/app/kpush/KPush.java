@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import de.mhus.lib.core.M;
+import de.mhus.lib.core.MArgs;
 import de.mhus.lib.core.MFile;
 import de.mhus.lib.core.MLog;
 import de.mhus.lib.core.config.IConfig;
@@ -16,11 +17,10 @@ public class KPush extends MLog {
 
     private File configDir;
     private ArrayList<Job> jobs = new ArrayList<>();
+    private MArgs args;
     
-    public KPush() throws MException {
-        this(null);
-    }
-    public KPush(String configDir) throws MException {
+    public void init() throws MException {
+        String configDir = args.getValue("c", 0);
         if (configDir == null)
             this.configDir = MFile.toFile("~/.kpush/config");
         else
@@ -31,18 +31,22 @@ public class KPush extends MLog {
     }
 
     private void loadConfig() throws MException {
-        for (File file : configDir.listFiles()) {
-            if (!file.isFile() || !file.getName().endsWith(".yaml"))
-                continue;
-            
-            loadConfig(file);
-        }
+        if (configDir.isFile()) {
+            if (configDir.getName().endsWith(".yaml"))
+                loadConfig(configDir);
+        } else
+            for (File file : configDir.listFiles()) {
+                if (!file.isFile() || !file.getName().endsWith(".yaml"))
+                    continue;
+                
+                loadConfig(file);
+            }
     }
     
     private Job loadConfig(File file) throws MException {
         log().d("Load configuration",file);
         IConfig config = M.l(IConfigFactory.class).read(file);
-        Job job = new Job(config, file);
+        Job job = new Job(this, config, file);
         jobs.add(job);
         return job;
     }
@@ -102,6 +106,15 @@ public class KPush extends MLog {
         }
 
         jobs.forEach(j -> j.stopWatch() ); 
+    }
+    
+    public void setArguments(MArgs margs) {
+        this.args = margs;
+    }
+    
+    public MArgs getArguments() {
+        if (args == null) return new MArgs(null);
+        return args;
     }
     
 }

@@ -7,25 +7,90 @@ The tool will use 'kubectl cp' and 'kubectl exec' to push and validate files
 in the container. No installation of components in the cluster are needed. Only
 a basic commandset 'bash', 'ls', 'mkdir', 'rm' is recommended in the container.
 
+== Program Arguments
+
+|===
+|Argument   |Description
+|-c         |Set the configuration directory or file, defaut `~/.kpush/config`
+|push       |Push once
+|pushall    |Push all data
+|watch      |Push every second in a loop, press Ctrl-C to exit
+|===
+
 == Configuration
 
 For each job push a yaml file in the configuration folder.
 
-Example
+=== Main Section
+
+|===
+|Parameter  |Type   |Description
+|name       |*Text  |Name of the configuration, for log file
+|description|Text   |Description of the configuration
+|namespace  |Text   |Kubernetes namespace
+|pod        |*Text  |Kubernetes name of the pod
+|container  |Text   |Kubernetes container inside of the pod
+|===
+
+=== Watch Section
+
+|===
+|Parameter  |Type   |Description
+|name       |Text   |Name of the configuration, for log file
+|source     |*Text  |Local path to the source directory
+|target     |*Text  |Remote path to the target directory
+|filter     |List   |List of filters to filter the local files and directories
+|algorithm  |Text   |Implementation to use to watch and transport files, default 'simple'
+|===
+
+=== Filters
+
+|===
+|Parameter      |Description
+|contains       |Accept if path contains the value
+|notcontains    |Deny if the path contains the value
+|regex          |Accept if the path matches the value as regex
+|notregex       |Deny if the path matches the value as regex
+|namecontains   |Accept if the name contains the value
+|notnamecontains|Deny if the name contains the value
+|dircontains    |Accept directory if the name contains the value
+|notdircontains |Deny directory if the name contains the value
+|===
+
+=== Simple algorithm
+
+NOTE: algorithm: simple
+
+A algorithm using `kubectl` to transport files. It's using `kubectl cp` and `kubectl exec` with `ls`, `mkdir`. The sync will
+store the last sync time beside the configuration file as `*.kpush` file. If no file is found the current time is used.
+
+
+If init is enabled, initial it will transport only non existing files.
+
+|===
+|Parameter      |Type   |Description
+|ignoreInit     |bool   |Ignore initial process, default true
+|rememberLastUpdated|bool|default false
+|===
+
+The additional parameter in `Main Section` named `kubectl` can be used to change the path to the kubectl binary.
+
+The additional program argument `-r` can be used to recreate all files (sets sync time to zero).
+
+=== Example
 
 ----
 
 name: mhus to karaf
 description: push all changes in local repository mhus into the karaf container
 
+namespace: mhus
+pod: server
+container: karaf
+  
 properties:
 - versions.properties
 
-target:
-  namespace: mhus
-  pod: server
-  container: karaf
-  
 watch:
 - name: Repo mhus
   source: ~/.m2/repository/de/mhus

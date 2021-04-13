@@ -22,8 +22,10 @@ public class Job extends MLog implements Runnable {
     private String namespace;
     private String container;
     private String pod;
+    private KPush kpush;
 
-    public Job(IConfig config, File file) throws MException {
+    public Job(KPush kpush, IConfig config, File file) throws MException {
+        this.kpush = kpush;
         this.config = config;
         this.cfgFile = file;
         this.cfgFileModify = file.lastModified();
@@ -144,6 +146,10 @@ public class Job extends MLog implements Runnable {
 
     public File getConfigFile() {
         return cfgFile;
+    }
+
+    public KPush getKPush() {
+        return kpush;
     }
 
 }
