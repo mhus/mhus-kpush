@@ -6,6 +6,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import de.mhus.lib.core.M;
+import de.mhus.lib.core.MFile;
+import de.mhus.lib.core.MProperties;
 import de.mhus.lib.core.MString;
 import de.mhus.lib.core.MSystem;
 import de.mhus.lib.core.MSystem.ScriptResult;
@@ -22,9 +24,12 @@ import de.mhus.lib.errors.MException;
 public class WatchSimple extends Watch {
 
     long lastUpdated = 0;
+    private File lastUpdatedFile;
     
     public WatchSimple(Job job, IConfig config) throws MException {
         super(job, config);
+        lastUpdatedFile = new File(job.getConfigFile().getParent(), MFile.getFileNameOnly( job.getConfigFile().getName() ) + ".kpush" );
+        loadLastUpdated();
     }
 
     @Override
@@ -65,8 +70,8 @@ public class WatchSimple extends Watch {
                     }
                 }
             });
+            lastUpdated = updateTime;
         }
-        lastUpdated = updateTime;
     }
     
     @Override
@@ -86,6 +91,32 @@ public class WatchSimple extends Watch {
             }
         });
         lastUpdated = updateTime;
+        saveLastUpdated();
+    }
+
+    private void loadLastUpdated() {
+        if (!job.getConfig().getBoolean("rememberLastUpdated", true)) return;
+        if (lastUpdatedFile.exists() && lastUpdatedFile.isFile()) {
+            try {
+                log().i("load lastUpdated from",lastUpdatedFile);
+                MProperties p = MProperties.load(lastUpdatedFile);
+                lastUpdated = p.getLong("lastUpdated", lastUpdated);
+            } catch (Throwable t) {
+                log().w(t);
+            }
+        }
+    }
+    
+    private void saveLastUpdated() {
+        if (!job.getConfig().getBoolean("rememberLastUpdated", true)) return;
+        try {
+            log().i("save lastUpdated to",lastUpdatedFile);
+            MProperties p = new MProperties();
+            p.setLong("lastUpdated", lastUpdated);
+            p.save(lastUpdatedFile);
+        } catch (Throwable t) {
+            log().w(t);
+        }
     }
 
     @Override

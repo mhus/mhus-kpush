@@ -48,7 +48,6 @@ public class KPush extends MLog {
     }
 
     public void push() {
-        jobs.forEach(j -> j.init() );
         jobs.forEach(j -> j.push() );
     }
     
