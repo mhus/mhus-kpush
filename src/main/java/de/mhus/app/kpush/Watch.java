@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.List;
 import java.util.function.BiConsumer;
 
+import de.mhus.lib.core.MFile;
 import de.mhus.lib.core.MLog;
 import de.mhus.lib.core.config.IConfig;
 import de.mhus.lib.errors.MException;
@@ -24,7 +25,7 @@ public abstract class Watch extends MLog {
         source = config.getString("source");
         target = config.getString("target");
         name = config.getString("name", source);
-        sourceDir = new File(source);
+        sourceDir = MFile.toFile(source);
         if (config.isArray("filter"))
             filters = config.getObjectList("filter");
     }

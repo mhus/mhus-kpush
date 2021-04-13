@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import de.mhus.lib.core.MConstants;
+import de.mhus.lib.core.M;
 import de.mhus.lib.core.MString;
 import de.mhus.lib.core.MSystem;
 import de.mhus.lib.core.MSystem.ScriptResult;
@@ -109,7 +109,7 @@ public class WatchSimple extends Watch {
             cmd.add("cp");
             cmd.add(f.getAbsolutePath());
             cmd.add(job.getPod() + ":" + target + n);
-            ScriptResult res = MSystem.execute(cmd.toArray(MConstants.EMPTY_STRING_ARRAY));
+            ScriptResult res = MSystem.execute(cmd.toArray(M.EMPTY_STRING_ARRAY));
             
             log().d(res);
 //                if (res.getError().contains("No such file or directory")) {

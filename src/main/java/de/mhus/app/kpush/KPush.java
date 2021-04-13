@@ -4,8 +4,8 @@ import java.io.File;
 import java.util.ArrayList;
 
 import de.mhus.lib.core.M;
+import de.mhus.lib.core.MFile;
 import de.mhus.lib.core.MLog;
-import de.mhus.lib.core.MSystem;
 import de.mhus.lib.core.config.IConfig;
 import de.mhus.lib.core.config.IConfigFactory;
 import de.mhus.lib.core.console.Console;
@@ -18,8 +18,14 @@ public class KPush extends MLog {
     private ArrayList<Job> jobs = new ArrayList<>();
     
     public KPush() throws MException {
-        configDir = new File(MSystem.getUserHome(), "/.kpush/config");
-        if (!configDir.exists())
+        this(null);
+    }
+    public KPush(String configDir) throws MException {
+        if (configDir == null)
+            this.configDir = MFile.toFile("~/.kpush/config");
+        else
+            this.configDir = MFile.toFile(configDir);
+        if (!this.configDir.exists())
             log().w("Config directory not found",configDir);
         loadConfig();
     }
