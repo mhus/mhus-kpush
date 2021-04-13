@@ -12,7 +12,7 @@ public class Main {
         KPush inst = new KPush(margs.getValue("-c", 0));
         
         String action = margs.getValue(MArgs.DEFAULT, 0);
-        if (action == null) action = "pushall";
+        if (action == null) action = "push";
         switch (action) {
         case "watch":
             inst.watch();
