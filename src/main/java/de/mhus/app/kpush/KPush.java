@@ -22,6 +22,9 @@ public class KPush extends MLog {
     private int interval;
     
     public void init() throws MException {
+        
+        interval = M.to(getArguments().getValue("i", 0), 5000 );
+
         homeDir = System.getenv("KPUSH_HOME");
         if (homeDir == null)
             homeDir = "~/.kpush";
@@ -34,7 +37,6 @@ public class KPush extends MLog {
             log().w("Config directory not found",configDir);
         loadConfig();
         
-        interval = M.to(getArguments().getValue("i", 0), 5000 );
         
     }
 
