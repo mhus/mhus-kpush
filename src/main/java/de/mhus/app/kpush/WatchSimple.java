@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import de.mhus.lib.core.M;
+import de.mhus.lib.core.MDate;
 import de.mhus.lib.core.MFile;
 import de.mhus.lib.core.MProperties;
 import de.mhus.lib.core.MString;
@@ -107,6 +108,7 @@ public class WatchSimple extends Watch {
                 log().i("load lastUpdated from",lastUpdatedFile);
                 MProperties p = MProperties.load(lastUpdatedFile);
                 lastUpdated = p.getLong("lastUpdated", lastUpdated);
+                log().i("last update",MDate.toIsoDateTime(lastUpdated));
             } catch (Throwable t) {
                 log().w(t);
             }
@@ -116,7 +118,7 @@ public class WatchSimple extends Watch {
     private void saveLastUpdated() {
         if (!job.getConfig().getBoolean("rememberLastUpdated", true)) return;
         try {
-            log().i("save lastUpdated to",lastUpdatedFile);
+            log().i("save lastUpdated to",lastUpdatedFile,MDate.toIsoDateTime(lastUpdated));
             MProperties p = new MProperties();
             p.setLong("lastUpdated", lastUpdated);
             p.save(lastUpdatedFile);

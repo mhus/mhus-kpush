@@ -3,7 +3,7 @@ package de.mhus.app.kpush;
 import de.mhus.lib.core.MArgs;
 import de.mhus.lib.errors.MException;
 
-public class Main {
+public class MainCli {
 
     public static void main(String[] args) throws MException {
         

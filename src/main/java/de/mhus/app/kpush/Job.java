@@ -2,6 +2,7 @@ package de.mhus.app.kpush;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 
 import de.mhus.lib.core.MLog;
 import de.mhus.lib.core.MThread;
@@ -23,6 +24,8 @@ public class Job extends MLog implements Runnable {
     private String container;
     private String pod;
     private KPush kpush;
+    private long interval;
+    private volatile Date lastUpdate;
 
     public Job(KPush kpush, IConfig config, File file) throws MException {
         this.kpush = kpush;
@@ -36,6 +39,7 @@ public class Job extends MLog implements Runnable {
         description = config.getString("description", "");
         for (IConfig watchC : config.getObjectList("watch"))
             watches.add(WatchFactory.create(this, watchC));
+        interval = config.getLong("interval", kpush.getInterval());
     }
 
     public void startWatch() {
@@ -80,7 +84,7 @@ public class Job extends MLog implements Runnable {
         
         while (isRunning) {
             push();
-            MThread.sleepForSure(1000);
+            MThread.sleepForSure(interval);
         }
     }
     
@@ -95,6 +99,7 @@ public class Job extends MLog implements Runnable {
     }
    
     public void push() {
+        lastUpdate = new Date();
         for (Watch watch : watches)
             try {
                 if (!isRunning) break;
@@ -150,6 +155,10 @@ public class Job extends MLog implements Runnable {
 
     public KPush getKPush() {
         return kpush;
+    }
+    
+    public Date getLastUpdate() {
+        return lastUpdate;
     }
 
 }

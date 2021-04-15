@@ -12,6 +12,7 @@ a basic commandset 'bash', 'ls', 'mkdir', 'rm' is recommended in the container.
 |===
 |Argument   |Description
 |-c         |Set the configuration directory or file, defaut `~/.kpush/config`
+|-i         |Global interval in milliseconds to wait between status output in watch mode, default 5000 (5sec)
 |push       |Push once
 |pushall    |Push all data
 |watch      |Push every second in a loop, press Ctrl-C to exit
@@ -41,6 +42,7 @@ For each job push a yaml file in the configuration folder.
 |target     |*Text  |Remote path to the target directory
 |filter     |List   |List of filters to filter the local files and directories
 |algorithm  |Text   |Implementation to use to watch and transport files, default 'simple'
+|interval   |Number |Interval in milliseconds to wait between file scans in watch mode, default global interval
 |===
 
 === Filters

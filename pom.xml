@@ -24,11 +24,11 @@
 		<version>7.4.0-SNAPSHOT</version>
 	    <artifactId>mhus-oss</artifactId>
     </parent>
+    <groupId>de.mhus.app</groupId>
     <version>1.0.0-SNAPSHOT</version>
 	<artifactId>mhus-kpush</artifactId>
 	<description>Application to push files into existing kubernetes containers</description>
 	<url>http://www.mhus.info</url>
-	<name>mhus-lib</name>
     
     <properties>
     </properties>
@@ -42,8 +42,8 @@
 		</license>
 	</licenses>
 	<scm>
-		<url>https://github.com/mhus/mhus-lib</url>
-		<connection>scm:git:https://github.com/mhus/mhus-lib/</connection>
+		<url>https://github.com/mhus/mhus-kpush</url>
+		<connection>scm:git:https://github.com/mhus/mhus-kpush/</connection>
 		<tag>HEAD</tag>
 	</scm>
 	<developers>
@@ -54,6 +54,95 @@
 			<url>http://www.mhus.info</url>
 		</developer>
 	</developers>
+
+
+   <build>
+    <plugins>
+            <!-- Maven Shade Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.3</version>
+                <executions>
+                    <!-- Run shade goal on package phase -->
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>kpush</finalName>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+
+                            <transformers>
+                                <!-- add Main-Class to manifest file -->
+                                <transformer
+                                    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>de.mhus.app.kpush.MainCli</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+           <plugin>
+             <artifactId>maven-assembly-plugin</artifactId>
+             <executions>
+               <execution>
+                 <id>assembly</id>
+                 <phase>package</phase>
+                 <goals><goal>single</goal></goals>
+                 <configuration>
+                   <descriptors>
+                     <descriptor>assembly.xml</descriptor>
+                   </descriptors>
+                 </configuration>
+               </execution>
+             </executions>
+           </plugin>        
+            
+            
+           <plugin>
+               <groupId>org.codehaus.mojo</groupId>
+               <artifactId>build-helper-maven-plugin</artifactId>
+               <executions>
+                   <execution>
+                       <id>attach-artifacts</id>
+                       <phase>package</phase>
+                       <goals>
+                           <goal>attach-artifact</goal>
+                       </goals>
+                       <configuration>
+                           <artifacts>
+                           <!-- 
+                               <artifact>
+                                   <file>target/doc-install.zip</file>
+                                   <classifier>install</classifier>
+                                   <type>zip</type>
+                               </artifact>
+                            -->
+                               <artifact>
+                                   <file>src/main/launch/install.sh</file>
+                                   <classifier>install</classifier>
+                                   <type>sh</type>
+                               </artifact>
+                           </artifacts>
+                       </configuration>
+                   </execution>
+               </executions>
+           </plugin>
+        
+    </plugins>
+  </build>
 
     <dependencies>
         <dependency>

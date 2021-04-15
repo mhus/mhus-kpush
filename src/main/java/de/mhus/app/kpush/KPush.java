@@ -18,16 +18,24 @@ public class KPush extends MLog {
     private File configDir;
     private ArrayList<Job> jobs = new ArrayList<>();
     private MArgs args;
+    private String homeDir;
+    private int interval;
     
     public void init() throws MException {
+        homeDir = System.getenv("KPUSH_HOME");
+        if (homeDir == null)
+            homeDir = "~/.kpush";
         String configDir = args.getValue("c", 0);
         if (configDir == null)
-            this.configDir = MFile.toFile("~/.kpush/config");
+            this.configDir = MFile.toFile(homeDir + "/config");
         else
             this.configDir = MFile.toFile(configDir);
         if (!this.configDir.exists())
             log().w("Config directory not found",configDir);
         loadConfig();
+        
+        interval = M.to(getArguments().getValue("i", 0), 5000 );
+        
     }
 
     private void loadConfig() throws MException {
@@ -63,20 +71,22 @@ public class KPush extends MLog {
     
     public void watch() {
         
-        Console console = Console.get();
-        
+        Console console = Console.create();
+        System.out.println(console.getClass());
         jobs.forEach(j -> j.startWatch() ); 
-        
         try {
             while (true) {
                 console.cleanup();
+                console.clearTerminal();
                 ConsoleTable table = new ConsoleTable();
-                table.setHeaderValues("Name", "Cnt");
+                table.fitToConsole();
+                table.setHeaderValues("Name", "Files to transfer","Last update");
                 
-                jobs.forEach(j -> table.addRowValues( j.getName(), j.getFileCnt() ) );
+                
+                jobs.forEach(j -> table.addRowValues( j.getName(), j.getFileCnt(), j.getLastUpdate() ) );
                 table.print();
                 
-                Thread.sleep(1000);
+                Thread.sleep(interval);
                 
                 for (Job job : new ArrayList<>( jobs )) {
                     if (job.isConfigFileRemoved()) {
@@ -115,6 +125,10 @@ public class KPush extends MLog {
     public MArgs getArguments() {
         if (args == null) return new MArgs(null);
         return args;
+    }
+
+    public long getInterval() {
+        return interval;
     }
     
 }
