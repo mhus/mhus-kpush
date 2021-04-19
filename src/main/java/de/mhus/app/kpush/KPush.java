@@ -82,10 +82,10 @@ public class KPush extends MLog {
                 console.clearTerminal();
                 ConsoleTable table = new ConsoleTable();
                 table.fitToConsole();
-                table.setHeaderValues("Name", "Files to transfer","Last update");
+                table.setHeaderValues("Name", "Left","Watched","Transferred","Last update");
                 
                 
-                jobs.forEach(j -> table.addRowValues( j.getName(), j.getFileCnt(), j.getLastUpdate() ) );
+                jobs.forEach(j -> table.addRowValues( j.getName(), j.getFileToDoCnt(), j.getFileCnt(), j.getFiledTransferred(), j.getLastUpdate() ) );
                 table.print();
                 
                 Thread.sleep(interval);

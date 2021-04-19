@@ -6,9 +6,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import de.mhus.lib.core.M;
-import de.mhus.lib.core.MDate;
-import de.mhus.lib.core.MFile;
-import de.mhus.lib.core.MProperties;
 import de.mhus.lib.core.MString;
 import de.mhus.lib.core.MSystem;
 import de.mhus.lib.core.MSystem.ScriptResult;
@@ -24,34 +21,28 @@ import de.mhus.lib.errors.MException;
  */
 public class WatchSimple extends Watch {
 
-    long lastUpdated = System.currentTimeMillis();
-    private File lastUpdatedFile;
+    int cnt = 0;
     
     public WatchSimple(Job job, IConfig config) throws MException {
         super(job, config);
-        lastUpdatedFile = new File(job.getConfigFile().getParent(), MFile.getFileNameOnly( job.getConfigFile().getName() ) + ".kpush" );
-        if (job.getKPush().getArguments().contains("r"))
-            lastUpdated = 0;
-        else
-            loadLastUpdated();
     }
 
     @Override
-    public void init() {
+    public void init(long lastUpdated) {
                 
-        fileCnt = 0;
-        long updateTime = System.currentTimeMillis();
-        
-        if (job.getConfig().getBoolean("ignoreInit", true)) {
+        todoCnt = 0;
+        if (!job.getConfig().getBoolean("ignoreInit", true)) {
             forEachSourceFile( (f,n) -> {
+                cnt++;
                 if (f.lastModified() > lastUpdated) {
-                    fileCnt++; 
+                    todoCnt++; 
                 }
             });
+            fileCnt = cnt;
             forEachSourceFile( (f,n) -> {
                 if (f.lastModified() > lastUpdated) {
-                    fileCnt--; 
-                    log().i("Init",name,fileCnt,n);
+                    todoCnt--; 
+                    log().i("Init",name,todoCnt,n);
                     try {
                         List<String> cmd = kubectl();
                         cmd.add("exec");
@@ -77,69 +68,40 @@ public class WatchSimple extends Watch {
                     }
                 }
             });
-            lastUpdated = updateTime;
         }
     }
     
     @Override
-    public void push() {
-        fileCnt = 0;
-        long updateTime = System.currentTimeMillis();
+    public void push(long lastUpdated) {
+        todoCnt = 0;
+        cnt = 0;
         forEachSourceFile( (f,n) -> {
+            cnt++;
             if (f.lastModified() > lastUpdated) {
-                fileCnt++; 
+                todoCnt++; 
             }
         });
+        fileCnt = cnt;
         forEachSourceFile( (f,n) -> {
             if (f.lastModified() > lastUpdated) {
-                fileCnt--; 
-                log().i("Update",name,fileCnt,n);
+                todoCnt--; 
+                log().i("Update",name,todoCnt,n);
                 pushToK8s(f, n);
             }
         });
-        lastUpdated = updateTime;
-        saveLastUpdated();
-    }
-
-    private void loadLastUpdated() {
-        if (!job.getConfig().getBoolean("rememberLastUpdated", true)) return;
-        if (lastUpdatedFile.exists() && lastUpdatedFile.isFile()) {
-            try {
-                log().i("load lastUpdated from",lastUpdatedFile);
-                MProperties p = MProperties.load(lastUpdatedFile);
-                lastUpdated = p.getLong("lastUpdated", lastUpdated);
-                log().i("last update",MDate.toIsoDateTime(lastUpdated));
-            } catch (Throwable t) {
-                log().w(t);
-            }
-        }
-    }
-    
-    private void saveLastUpdated() {
-        if (!job.getConfig().getBoolean("rememberLastUpdated", true)) return;
-        try {
-            log().i("save lastUpdated to",lastUpdatedFile,MDate.toIsoDateTime(lastUpdated));
-            MProperties p = new MProperties();
-            p.setLong("lastUpdated", lastUpdated);
-            p.save(lastUpdatedFile);
-        } catch (Throwable t) {
-            log().w(t);
-        }
     }
 
     @Override
     public void pushAll() {
-        fileCnt = 0;
-        long updateTime = System.currentTimeMillis();
+        todoCnt = 0;
         forEachSourceFile( (f,n) -> {
-            fileCnt++; 
+            todoCnt++; 
         });
         forEachSourceFile( (f,n) -> {
-            fileCnt--; 
-            log().i("Update",name,fileCnt,n);
+            todoCnt--; 
+            log().i("Update",name,todoCnt,n);
             pushToK8s(f,n);
         });
-        lastUpdated = updateTime;
     }
 
     private void pushToK8s(File f, String n) {
@@ -175,9 +137,11 @@ public class WatchSimple extends Watch {
                 if (res4.getRc() != 0) {
                     log().e("can't create file",target,n);
                     return;
-                }
+                } else
+                    fileTransferred++;
                 
-            }
+            } else
+                fileTransferred++;
             
         } catch (IOException e) {
             // will fail if directory not exists

@@ -4,7 +4,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 
+import de.mhus.lib.core.MDate;
+import de.mhus.lib.core.MFile;
 import de.mhus.lib.core.MLog;
+import de.mhus.lib.core.MProperties;
 import de.mhus.lib.core.MThread;
 import de.mhus.lib.core.config.IConfig;
 import de.mhus.lib.core.util.IntValue;
@@ -12,6 +15,9 @@ import de.mhus.lib.errors.MException;
 
 public class Job extends MLog implements Runnable {
 
+    long lastUpdated = System.currentTimeMillis();
+    private File lastUpdatedFile;
+        
     private IConfig config;
     private String name;
     private String description;
@@ -25,7 +31,7 @@ public class Job extends MLog implements Runnable {
     private String pod;
     private KPush kpush;
     private long interval;
-    private volatile Date lastUpdate;
+    private volatile Date lastUpdateStart;
 
     public Job(KPush kpush, IConfig config, File file) throws MException {
         this.kpush = kpush;
@@ -40,6 +46,13 @@ public class Job extends MLog implements Runnable {
         for (IConfig watchC : config.getObjectList("watch"))
             watches.add(WatchFactory.create(this, watchC));
         interval = config.getLong("interval", kpush.getInterval());
+        
+        lastUpdatedFile = new File(getConfigFile().getParent(), MFile.getFileNameOnly( getConfigFile().getName() ) + ".kpush" );
+        if (getKPush().getArguments().contains("r"))
+            lastUpdated = 0;
+        else
+            loadLastUpdated();
+        
     }
 
     public void startWatch() {
@@ -89,6 +102,7 @@ public class Job extends MLog implements Runnable {
     }
     
     public void pushAll() {
+        lastUpdateStart = new Date();
         for (Watch watch : watches)
             try {
                 if (!isRunning) break;
@@ -96,23 +110,28 @@ public class Job extends MLog implements Runnable {
             } catch (Throwable t) {
                 log().e(t,name,watch.getName());
             }
+        lastUpdated = lastUpdateStart.getTime();
+        saveLastUpdated();
     }
    
     public void push() {
-        lastUpdate = new Date();
+        lastUpdateStart = new Date();
+        
         for (Watch watch : watches)
             try {
                 if (!isRunning) break;
-                watch.push();
+                watch.push(lastUpdated);
             } catch (Throwable t) {
                 log().e(t,name,watch.getName());
             }
+        lastUpdated = lastUpdateStart.getTime();
+        saveLastUpdated();
     }
 
     public void init() {
         for (Watch watch : watches)
             try {
-                watch.init();
+                watch.init(lastUpdated);
             } catch (Throwable t) {
                 log().e(t,name,watch.getName());
             }
@@ -130,12 +149,18 @@ public class Job extends MLog implements Runnable {
         return pod;
     }
     
+    public int getFileToDoCnt() {
+        IntValue fileCnt = new IntValue();
+        watches.forEach(w -> fileCnt.value+=w.getFileToDoCnt());
+        return fileCnt.value;
+    }
+
     public int getFileCnt() {
         IntValue fileCnt = new IntValue();
         watches.forEach(w -> fileCnt.value+=w.getFileCnt());
         return fileCnt.value;
     }
-
+    
     public IConfig getConfig() {
         return config;
     }
@@ -158,7 +183,39 @@ public class Job extends MLog implements Runnable {
     }
     
     public Date getLastUpdate() {
-        return lastUpdate;
+        return lastUpdateStart;
+    }
+
+    private void loadLastUpdated() {
+        if (!getConfig().getBoolean("rememberLastUpdated", true)) return;
+        if (lastUpdatedFile.exists() && lastUpdatedFile.isFile()) {
+            try {
+                log().i("load lastUpdated from",lastUpdatedFile);
+                MProperties p = MProperties.load(lastUpdatedFile);
+                lastUpdated = p.getLong("lastUpdated", lastUpdated);
+                log().i("last update",MDate.toIsoDateTime(lastUpdated));
+            } catch (Throwable t) {
+                log().w(t);
+            }
+        }
+    }
+    
+    private void saveLastUpdated() {
+        if (!getConfig().getBoolean("rememberLastUpdated", true)) return;
+        try {
+            log().i("save lastUpdated to",lastUpdatedFile,MDate.toIsoDateTime(lastUpdated));
+            MProperties p = new MProperties();
+            p.setLong("lastUpdated", lastUpdated);
+            p.save(lastUpdatedFile);
+        } catch (Throwable t) {
+            log().w(t);
+        }
+    }
+
+    public long getFiledTransferred() {
+        IntValue fileCnt = new IntValue();
+        watches.forEach(w -> fileCnt.value+=w.getFileTransferred());
+        return fileCnt.value;
     }
 
 }

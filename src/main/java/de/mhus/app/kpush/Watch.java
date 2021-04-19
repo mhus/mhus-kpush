@@ -18,7 +18,9 @@ public abstract class Watch extends MLog {
     protected Job job;
     private File sourceDir;
     protected int fileCnt;
+    protected int todoCnt;
     private List<IConfig> filters;
+    protected int fileTransferred;
 
     public Watch(Job job, IConfig config) throws MException {
         this.job = job;
@@ -30,9 +32,9 @@ public abstract class Watch extends MLog {
             filters = config.getObjectList("filter");
     }
 
-    public abstract void init();
+    public abstract void init(long lastUpdateTime);
     
-    public abstract void push();
+    public abstract void push(long lastUpdateTime);
 
     public String getName() {
         return name;
@@ -92,14 +94,23 @@ public abstract class Watch extends MLog {
             if (f != null && file.isDirectory() && file.getName().matches(f)) return false;
             
         }
+        if (file.isDirectory()) return true;
         return false;
+    }
+
+    public int getFileToDoCnt() {
+        return todoCnt;
     }
 
     public int getFileCnt() {
         return fileCnt;
     }
-
+    
     protected abstract void pushAll();
+
+    protected int getFileTransferred() {
+        return fileTransferred;
+    }
 
 }
 
