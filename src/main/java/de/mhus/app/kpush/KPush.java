@@ -7,10 +7,10 @@ import de.mhus.lib.core.M;
 import de.mhus.lib.core.MArgs;
 import de.mhus.lib.core.MFile;
 import de.mhus.lib.core.MLog;
-import de.mhus.lib.core.config.IConfig;
-import de.mhus.lib.core.config.IConfigFactory;
 import de.mhus.lib.core.console.Console;
 import de.mhus.lib.core.console.ConsoleTable;
+import de.mhus.lib.core.node.INode;
+import de.mhus.lib.core.node.INodeFactory;
 import de.mhus.lib.errors.MException;
 
 public class KPush extends MLog {
@@ -55,7 +55,7 @@ public class KPush extends MLog {
     
     private Job loadConfig(File file) throws MException {
         log().d("Load configuration",file);
-        IConfig config = M.l(IConfigFactory.class).read(file);
+        INode config = M.l(INodeFactory.class).read(file);
         Job job = new Job(this, config, file);
         jobs.add(job);
         return job;

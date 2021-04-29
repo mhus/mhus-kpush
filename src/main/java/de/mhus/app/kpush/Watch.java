@@ -6,7 +6,7 @@ import java.util.function.BiConsumer;
 
 import de.mhus.lib.core.MFile;
 import de.mhus.lib.core.MLog;
-import de.mhus.lib.core.config.IConfig;
+import de.mhus.lib.core.node.INode;
 import de.mhus.lib.errors.MException;
 
 public abstract class Watch extends MLog {
@@ -19,10 +19,10 @@ public abstract class Watch extends MLog {
     private File sourceDir;
     protected int fileCnt;
     protected int todoCnt;
-    private List<IConfig> filters;
+    private List<INode> filters;
     protected int fileTransferred;
 
-    public Watch(Job job, IConfig config) throws MException {
+    public Watch(Job job, INode config) throws MException {
         this.job = job;
         source = config.getString("source");
         target = config.getString("target");
@@ -68,7 +68,7 @@ public abstract class Watch extends MLog {
 
     protected boolean accepted(File file, String path) {
         if (filters == null) return true;
-        for (IConfig filter : filters) {
+        for (INode filter : filters) {
             String f = filter.getString("contains",null);
             if (f != null && path.contains(f)) return true;
             

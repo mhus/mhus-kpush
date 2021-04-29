@@ -9,7 +9,7 @@ import de.mhus.lib.core.MFile;
 import de.mhus.lib.core.MLog;
 import de.mhus.lib.core.MProperties;
 import de.mhus.lib.core.MThread;
-import de.mhus.lib.core.config.IConfig;
+import de.mhus.lib.core.node.INode;
 import de.mhus.lib.core.util.IntValue;
 import de.mhus.lib.errors.MException;
 
@@ -18,7 +18,7 @@ public class Job extends MLog implements Runnable {
     long lastUpdated = System.currentTimeMillis();
     private File lastUpdatedFile;
         
-    private IConfig config;
+    private INode config;
     private String name;
     private String description;
     private File cfgFile;
@@ -33,7 +33,7 @@ public class Job extends MLog implements Runnable {
     private long interval;
     private volatile Date lastUpdateStart;
 
-    public Job(KPush kpush, IConfig config, File file) throws MException {
+    public Job(KPush kpush, INode config, File file) throws MException {
         this.kpush = kpush;
         this.config = config;
         this.cfgFile = file;
@@ -43,7 +43,7 @@ public class Job extends MLog implements Runnable {
         container = config.getString("container", null);
         pod = config.getString("pod");
         description = config.getString("description", "");
-        for (IConfig watchC : config.getObjectList("watch"))
+        for (INode watchC : config.getObjectList("watch"))
             watches.add(WatchFactory.create(this, watchC));
         interval = config.getLong("interval", kpush.getInterval());
         
@@ -161,7 +161,7 @@ public class Job extends MLog implements Runnable {
         return fileCnt.value;
     }
     
-    public IConfig getConfig() {
+    public INode getConfig() {
         return config;
     }
     

@@ -9,7 +9,7 @@ import de.mhus.lib.core.M;
 import de.mhus.lib.core.MString;
 import de.mhus.lib.core.MSystem;
 import de.mhus.lib.core.MSystem.ScriptResult;
-import de.mhus.lib.core.config.IConfig;
+import de.mhus.lib.core.node.INode;
 import de.mhus.lib.errors.MException;
 
 /**
@@ -23,7 +23,7 @@ public class WatchSimple extends Watch {
 
     int cnt = 0;
     
-    public WatchSimple(Job job, IConfig config) throws MException {
+    public WatchSimple(Job job, INode config) throws MException {
         super(job, config);
     }
 
