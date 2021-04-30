@@ -104,7 +104,7 @@ public class WatchSimple extends Watch {
         });
     }
 
-    private void pushToK8s(File f, String n) {
+    private boolean pushToK8s(File f, String n) {
         try {
             List<String> cmd = kubectl();
             cmd.add("cp");
@@ -125,7 +125,8 @@ public class WatchSimple extends Watch {
                 log().d( res3 );
                 if (res3.getRc() != 0) {
                     log().e("can't create directory",target,dir);
-                    return;
+                    fileErrors++;
+                    return false;
                 }
                 //create
                 ScriptResult res4 = MSystem.execute(
@@ -136,7 +137,8 @@ public class WatchSimple extends Watch {
                 log().d( res4 );
                 if (res4.getRc() != 0) {
                     log().e("can't create file",target,n);
-                    return;
+                    fileErrors++;
+                    return false;
                 } else
                     fileTransferred++;
                 
@@ -148,7 +150,9 @@ public class WatchSimple extends Watch {
             
             // TODO Auto-generated catch block
             e.printStackTrace();
+            return false;
         }
+        return true;
      }
 
     private List<String> kubectl() {

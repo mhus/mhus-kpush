@@ -9,14 +9,25 @@ a basic commandset 'bash', 'ls', 'mkdir', 'rm' is recommended in the container.
 
 == Program Arguments
 
+----
+Usage:
+ kpush [options] [cmd] [job filter]*
+----
+
 |===
 |Argument   |Description
 |-c         |Set the configuration directory or file, defaut `~/.kpush/config`
 |-i         |Global interval in milliseconds to wait between status output in watch mode, default 5000 (5sec)
-|push       |Push once
-|pushall    |Push all data
-|watch      |Push every second in a loop, press Ctrl-C to exit
+|-v <level> |Set the log level: trace, debug, info (default), warn, error, fatal
+|-t <period>|A period of time backward for the command touch, e.g. 2h, 1d, 2w, 30min
+|push       |Command push once
+|pushall    |Command push all data
+|watch      |Command push every second in a loop, press Ctrl-C to exit
+|touch      |Command touch the update time to now, use option -t
+|reset      |Command set the update time to 1970
+|job filter |List of jobs to execute. All other jobs will be ignored. By default all jobs will be executed.
 |===
+
 
 == Configuration
 
@@ -26,11 +37,12 @@ For each job push a yaml file in the configuration folder.
 
 |===
 |Parameter  |Type   |Description
-|name       |*Text  |Name of the configuration, for log file
+|name       |Text   |Name of the configuration, for log file (default is the file name without extension)
 |description|Text   |Description of the configuration
 |namespace  |Text   |Kubernetes namespace
 |pod        |*Text  |Kubernetes name of the pod
 |container  |Text   |Kubernetes container inside of the pod
+|disabled   |Boolean|Disable the job (default false)
 |===
 
 === Watch Section
@@ -43,6 +55,7 @@ For each job push a yaml file in the configuration folder.
 |filter     |List   |List of filters to filter the local files and directories
 |algorithm  |Text   |Implementation to use to watch and transport files, default 'simple'
 |interval   |Number |Interval in milliseconds to wait between file scans in watch mode, default global interval
+|disabled   |Boolean|Disable the watch section (default false)
 |===
 
 === Filters
@@ -102,11 +115,32 @@ watch:
   
 ----
 
-== Comands
+== Examples
 
-kpush watch
+Create the file project1.yaml in `~/.kush/config`:
 
-kpush push
+----
 
-kpush push
+pod: project-0
+container: karaf
+
+watch:
+- name: MVN Repo
+  source: ~/.m2/repository/de/mhus
+  target: /home/user/.m2/repository/de/mhus
+  filter: 
+  - contains "7."
+  
+----
+
+This will push all files with version 7.* to the pod project-0.
+
+. `kpush push project1` will not push files because it's the first start and the update timestamp will be now.
+. compile some maven projects in `/home/user/.m2/repository/de/mhus`
+. `kpush push project1` will now push the compiled files
+. `kpush push project1` will not push any new files
+. `kpush -t 6h touch project1` set the update timestamp to 6 hours in the past
+. `kpush push project1` will now push the compiled files of the last 6 hours
+
+`kpush watch` will continuous push files.
 

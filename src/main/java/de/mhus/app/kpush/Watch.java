@@ -21,12 +21,15 @@ public abstract class Watch extends MLog {
     protected int todoCnt;
     private List<INode> filters;
     protected int fileTransferred;
+    protected int fileErrors;
+    private boolean disabled = false;
 
     public Watch(Job job, INode config) throws MException {
         this.job = job;
         source = config.getString("source");
         target = config.getString("target");
         name = config.getString("name", source);
+        disabled = config.getBoolean("disabled", false);
         sourceDir = MFile.toFile(source);
         if (config.isArray("filter"))
             filters = config.getObjectList("filter");
@@ -112,5 +115,17 @@ public abstract class Watch extends MLog {
         return fileTransferred;
     }
 
+    protected boolean isDisabled() {
+        return disabled;
+    }
+
+    public int getFileErrors() {
+        return fileErrors;
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }
 

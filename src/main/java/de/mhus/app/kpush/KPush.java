@@ -5,8 +5,11 @@ import java.util.ArrayList;
 
 import de.mhus.lib.core.M;
 import de.mhus.lib.core.MArgs;
+import de.mhus.lib.core.MCollection;
 import de.mhus.lib.core.MFile;
 import de.mhus.lib.core.MLog;
+import de.mhus.lib.core.MPeriod;
+import de.mhus.lib.core.MString;
 import de.mhus.lib.core.console.Console;
 import de.mhus.lib.core.console.ConsoleTable;
 import de.mhus.lib.core.node.INode;
@@ -20,11 +23,20 @@ public class KPush extends MLog {
     private MArgs args;
     private String homeDir;
     private int interval;
+    private String[] jobFilter;
     
     public void init() throws MException {
         
         interval = M.to(getArguments().getValue("i", 0), 5000 );
-
+        jobFilter = getArguments().getValues(MArgs.DEFAULT);
+        if (jobFilter.length > 0)
+            jobFilter = MCollection.cropArray(jobFilter, 1, jobFilter.length);
+        for (int i = 0; i < jobFilter.length; i++) {
+            jobFilter[i] = jobFilter[i].toUpperCase();
+            if (jobFilter[i].endsWith(".YAML"))
+                jobFilter[i] = MString.beforeLastIndex(jobFilter[i], '.');
+        }
+        log().d("jobFilter",jobFilter);
         homeDir = System.getenv("KPUSH_HOME");
         if (homeDir == null)
             homeDir = "~/.kpush";
@@ -57,16 +69,19 @@ public class KPush extends MLog {
         log().d("Load configuration",file);
         INode config = M.l(INodeFactory.class).read(file);
         Job job = new Job(this, config, file);
-        jobs.add(job);
+        if (filterJob(job)) 
+            jobs.add(job);
+        else
+            log().d("ignore by filter",job);
         return job;
     }
 
     public void push() {
-        jobs.forEach(j -> j.push() );
+        jobs.forEach(j -> j.push());
     }
     
     public void pushAll() {
-        jobs.forEach(j -> j.pushAll() );
+        jobs.forEach(j -> j.pushAll());
     }
     
 
@@ -82,10 +97,17 @@ public class KPush extends MLog {
                 console.clearTerminal();
                 ConsoleTable table = new ConsoleTable();
                 table.fitToConsole();
-                table.setHeaderValues("Name", "Left","Watched","Transferred","Last update");
+                table.setHeaderValues("Name", "Left","Watched","Transferred","Errors","Last update");
                 
                 
-                jobs.forEach(j -> table.addRowValues( j.getName(), j.getFileToDoCnt(), j.getFileCnt(), j.getFiledTransferred(), j.getLastUpdate() ) );
+                jobs.forEach(j -> table.addRowValues( 
+                        j.getName(), 
+                        j.getFileToDoCnt(), 
+                        j.getFileCnt(), 
+                        j.getFileTransferred(), 
+                        j.getFileErrors(),
+                        j.getLastUpdate() 
+                        ) );
                 table.print();
                 
                 Thread.sleep(interval);
@@ -120,6 +142,22 @@ public class KPush extends MLog {
         jobs.forEach(j -> j.stopWatch() ); 
     }
     
+    public void touch() {
+        String back = getArguments().getValue("t", "0", 0);
+        final long time = System.currentTimeMillis() - MPeriod.toTime(back, 0);
+        jobs.forEach(j -> j.touchTime(time));
+    }
+
+    public void reset() {
+        jobs.forEach(j -> j.touchTime(0));
+    }
+    
+
+    private boolean filterJob(Job job) {
+        if (jobFilter.length == 0) return true;
+        return MCollection.contains(jobFilter, job.getName().toUpperCase());
+    }
+
     public void setArguments(MArgs margs) {
         this.args = margs;
     }
@@ -132,5 +170,5 @@ public class KPush extends MLog {
     public long getInterval() {
         return interval;
     }
-    
+
 }

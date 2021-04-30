@@ -32,13 +32,15 @@ public class Job extends MLog implements Runnable {
     private KPush kpush;
     private long interval;
     private volatile Date lastUpdateStart;
+    private boolean disabled = false;
 
     public Job(KPush kpush, INode config, File file) throws MException {
         this.kpush = kpush;
         this.config = config;
         this.cfgFile = file;
         this.cfgFileModify = file.lastModified();
-        name = config.getString("name");
+        name = config.getString("name", MFile.getFileNameOnly(file.getName()).toUpperCase() );
+        disabled = config.getBoolean("disabled", false);
         namespace = config.getString("namespace", null);
         container = config.getString("container", null);
         pod = config.getString("pod");
@@ -47,7 +49,7 @@ public class Job extends MLog implements Runnable {
             watches.add(WatchFactory.create(this, watchC));
         interval = config.getLong("interval", kpush.getInterval());
         
-        lastUpdatedFile = new File(getConfigFile().getParent(), MFile.getFileNameOnly( getConfigFile().getName() ) + ".kpush" );
+        lastUpdatedFile = new File(getConfigFile().getParent(), MFile.getFileNameOnly( "kpush." + getConfigFile().getName() ) + ".dat" );
         if (getKPush().getArguments().contains("r"))
             lastUpdated = 0;
         else
@@ -57,7 +59,7 @@ public class Job extends MLog implements Runnable {
 
     public void startWatch() {
         if (thread != null) {
-            log().w("job already running");
+            log().w("job already running",this);
             return;
         }
         isRunning = true;
@@ -67,10 +69,10 @@ public class Job extends MLog implements Runnable {
 
     public void stopWatch() {
         if (thread == null) {
-            log().w("job not running");
+            log().w("job not running",this);
             return;
         }
-        log().i("Stopping",name);
+        log().i("Stopping",this);
         isRunning = false;
         try {
             thread.getThread().join();
@@ -79,7 +81,7 @@ public class Job extends MLog implements Runnable {
             e.printStackTrace();
         }
         thread = null;
-        log().i("Stopped",name);
+        log().i("Stopped",this);
     }
 
     public String getName() {
@@ -97,43 +99,65 @@ public class Job extends MLog implements Runnable {
         
         while (isRunning) {
             push();
-            MThread.sleepForSure(interval);
+            MThread.sleepForSure(disabled ? 30000 : interval);
         }
     }
     
     public void pushAll() {
+        if (disabled) {
+            log().i(this,"disabled");
+            return;
+        }
         lastUpdateStart = new Date();
         for (Watch watch : watches)
             try {
                 if (!isRunning) break;
-                watch.pushAll();
+                if (!watch.isDisabled()) {
+                    log().i(this,watch,"pushAll");
+                    watch.pushAll();
+                }
             } catch (Throwable t) {
-                log().e(t,name,watch.getName());
+                log().e(t,this,watch.getName());
             }
         lastUpdated = lastUpdateStart.getTime();
         saveLastUpdated();
     }
    
     public void push() {
+        if (disabled) {
+            log().i(this,"disabled");
+            return;
+        }
         lastUpdateStart = new Date();
         
         for (Watch watch : watches)
             try {
                 if (!isRunning) break;
-                watch.push(lastUpdated);
+                if (!watch.isDisabled()) {
+                    log().i(this,watch,"push");
+                    watch.push(lastUpdated);
+                } else
+                    log().i(this,watch,"disabled");
             } catch (Throwable t) {
-                log().e(t,name,watch.getName());
+                log().e(t,name,this,watch.getName());
             }
         lastUpdated = lastUpdateStart.getTime();
         saveLastUpdated();
     }
 
     public void init() {
+        if (disabled) {
+            log().i(this,"disabled init");
+            return;
+        }
         for (Watch watch : watches)
             try {
-                watch.init(lastUpdated);
+                if (!watch.isDisabled()) {
+                    log().i(this,watch,"init");
+                    watch.init(lastUpdated);
+                }
             } catch (Throwable t) {
-                log().e(t,name,watch.getName());
+                log().e(t,this,watch.getName());
             }
     }
 
@@ -190,12 +214,12 @@ public class Job extends MLog implements Runnable {
         if (!getConfig().getBoolean("rememberLastUpdated", true)) return;
         if (lastUpdatedFile.exists() && lastUpdatedFile.isFile()) {
             try {
-                log().i("load lastUpdated from",lastUpdatedFile);
+                log().d("load lastUpdated from",this,lastUpdatedFile);
                 MProperties p = MProperties.load(lastUpdatedFile);
                 lastUpdated = p.getLong("lastUpdated", lastUpdated);
-                log().i("last update",MDate.toIsoDateTime(lastUpdated));
+                log().d("last update",this,MDate.toIsoDateTime(lastUpdated));
             } catch (Throwable t) {
-                log().w(t);
+                log().w(t,this);
             }
         }
     }
@@ -203,19 +227,39 @@ public class Job extends MLog implements Runnable {
     private void saveLastUpdated() {
         if (!getConfig().getBoolean("rememberLastUpdated", true)) return;
         try {
-            log().i("save lastUpdated to",lastUpdatedFile,MDate.toIsoDateTime(lastUpdated));
+            log().d("save lastUpdated to",this,lastUpdatedFile,MDate.toIsoDateTime(lastUpdated));
             MProperties p = new MProperties();
             p.setLong("lastUpdated", lastUpdated);
             p.save(lastUpdatedFile);
         } catch (Throwable t) {
-            log().w(t);
+            log().w(t,this);
         }
     }
 
-    public long getFiledTransferred() {
+    public long getFileTransferred() {
         IntValue fileCnt = new IntValue();
         watches.forEach(w -> fileCnt.value+=w.getFileTransferred());
         return fileCnt.value;
     }
 
+    public long getFileErrors() {
+        IntValue fileCnt = new IntValue();
+        watches.forEach(w -> fileCnt.value+=w.getFileErrors());
+        return fileCnt.value;
+    }
+    
+    public boolean isDisabled() {
+        return disabled;
+    }
+    
+    @Override
+    public String toString() {
+        return name;
+    }
+
+    public void touchTime(long time) {
+        lastUpdated = time;
+        saveLastUpdated();
+    }
+        
 }
