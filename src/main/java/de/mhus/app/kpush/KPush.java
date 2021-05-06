@@ -14,7 +14,6 @@ import de.mhus.lib.core.console.Console;
 import de.mhus.lib.core.console.ConsoleTable;
 import de.mhus.lib.core.node.INode;
 import de.mhus.lib.core.node.INodeFactory;
-import de.mhus.lib.errors.MException;
 
 public class KPush extends MLog {
 
@@ -25,7 +24,7 @@ public class KPush extends MLog {
     private int interval;
     private String[] jobFilter;
     
-    public void init() throws MException {
+    public void init() throws Exception {
         
         interval = M.to(getArguments().getValue("i", 0), 5000 );
         jobFilter = getArguments().getValues(MArgs.DEFAULT);
@@ -52,7 +51,7 @@ public class KPush extends MLog {
         
     }
 
-    private void loadConfig() throws MException {
+    private void loadConfig() throws Exception {
         if (configDir.isFile()) {
             if (configDir.getName().endsWith(".yaml"))
                 loadConfig(configDir);
@@ -65,7 +64,7 @@ public class KPush extends MLog {
             }
     }
     
-    private Job loadConfig(File file) throws MException {
+    private Job loadConfig(File file) throws Exception {
         log().d("Load configuration",file);
         INode config = M.l(INodeFactory.class).read(file);
         Job job = new Job(this, config, file);
@@ -77,7 +76,18 @@ public class KPush extends MLog {
     }
 
     public void push() {
+        
+        String back = getArguments().getValue("t", "", 0);
+        if (MString.isSet(back)) {
+            final long time = System.currentTimeMillis() - MPeriod.toTime(back, 0);
+            log().i("Touch");
+            jobs.forEach(j -> j.touchTime(time));
+        }
         jobs.forEach(j -> j.push());
+    }
+    
+    public void test() {
+        jobs.forEach(j -> j.test());
     }
     
     public void pushAll() {
@@ -127,7 +137,7 @@ public class KPush extends MLog {
                         try {
                             job = loadConfig(job.getConfigFile());
                             job.startWatch();
-                        } catch (MException e) {
+                        } catch (Exception e) {
                             log().e(e);
                         }
                         

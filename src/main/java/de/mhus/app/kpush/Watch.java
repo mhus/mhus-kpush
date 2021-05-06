@@ -22,14 +22,14 @@ public abstract class Watch extends MLog {
     private List<INode> filters;
     protected int fileTransferred;
     protected int fileErrors;
-    private boolean disabled = false;
+    private boolean enabled = false;
 
     public Watch(Job job, INode config) throws MException {
         this.job = job;
         source = config.getString("source");
         target = config.getString("target");
         name = config.getString("name", source);
-        disabled = config.getBoolean("disabled", false);
+        enabled = config.getBoolean("enabled", true);
         sourceDir = MFile.toFile(source);
         if (config.isArray("filter"))
             filters = config.getObjectList("filter");
@@ -39,6 +39,8 @@ public abstract class Watch extends MLog {
     
     public abstract void push(long lastUpdateTime);
 
+    public abstract void test(long lastUpdateTime);
+    
     public String getName() {
         return name;
     }
@@ -51,7 +53,7 @@ public abstract class Watch extends MLog {
     
     private void forEachSourceFile(BiConsumer<File, String> action, File dir, String fName, int level) {
         if (level > MAX_LEVEL) {
-            log().e("max level reached",name);
+            log().e(job,name,"max level reached",name);
             return;
         }
         if (!sourceDir.exists()) {
@@ -115,8 +117,8 @@ public abstract class Watch extends MLog {
         return fileTransferred;
     }
 
-    protected boolean isDisabled() {
-        return disabled;
+    protected boolean isEnabled() {
+        return enabled;
     }
 
     public int getFileErrors() {

@@ -4,11 +4,10 @@ import de.mhus.lib.core.MApi;
 import de.mhus.lib.core.MArgs;
 import de.mhus.lib.core.logging.Log;
 import de.mhus.lib.core.logging.Log.LEVEL;
-import de.mhus.lib.errors.MException;
 
 public class MainCli {
 
-    public static void main(String[] args) throws MException {
+    public static void main(String[] args) throws Exception {
         
         MArgs margs = new MArgs(args);
         
@@ -37,6 +36,9 @@ public class MainCli {
         String action = margs.getValue(MArgs.DEFAULT, 0);
         if (action == null) action = "push";
         switch (action) {
+        case "test":
+            inst.test();
+            break;
         case "reset":
             inst.reset();
             break;

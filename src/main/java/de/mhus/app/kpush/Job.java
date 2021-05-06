@@ -1,14 +1,21 @@
 package de.mhus.app.kpush;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 
+import de.mhus.lib.core.M;
 import de.mhus.lib.core.MDate;
 import de.mhus.lib.core.MFile;
 import de.mhus.lib.core.MLog;
 import de.mhus.lib.core.MProperties;
+import de.mhus.lib.core.MString;
+import de.mhus.lib.core.MSystem;
 import de.mhus.lib.core.MThread;
+import de.mhus.lib.core.MSystem.ScriptResult;
 import de.mhus.lib.core.node.INode;
 import de.mhus.lib.core.util.IntValue;
 import de.mhus.lib.errors.MException;
@@ -32,15 +39,15 @@ public class Job extends MLog implements Runnable {
     private KPush kpush;
     private long interval;
     private volatile Date lastUpdateStart;
-    private boolean disabled = false;
+    private boolean enabled = false;
 
-    public Job(KPush kpush, INode config, File file) throws MException {
+    public Job(KPush kpush, INode config, File file) throws MException, IOException {
         this.kpush = kpush;
         this.config = config;
         this.cfgFile = file;
         this.cfgFileModify = file.lastModified();
         name = config.getString("name", MFile.getFileNameOnly(file.getName()).toUpperCase() );
-        disabled = config.getBoolean("disabled", false);
+        enabled = config.getBoolean("enabled", true);
         namespace = config.getString("namespace", null);
         container = config.getString("container", null);
         pod = config.getString("pod");
@@ -54,6 +61,22 @@ public class Job extends MLog implements Runnable {
             lastUpdated = 0;
         else
             loadLastUpdated();
+        
+        if (pod.startsWith("$")) {
+            List<String> cmd = kubectl(false);
+            cmd.add("get");
+            cmd.add("pods");
+            cmd.add("--selector=app=" + pod.substring(1));
+            cmd.add("-o");
+            cmd.add("jsonpath='{.items[*].metadata.name}'");
+            log().d(this,"Execute",cmd);
+            ScriptResult res = MSystem.execute(cmd.toArray(M.EMPTY_STRING_ARRAY));
+            log().d(this,"Result", res );
+            pod = res.getOutput().trim();
+            if (MString.isEmpty(pod))
+                throw new MException(this,"pod not found");
+            log().i("found pod",pod);
+        }
         
     }
 
@@ -99,12 +122,12 @@ public class Job extends MLog implements Runnable {
         
         while (isRunning) {
             push();
-            MThread.sleepForSure(disabled ? 30000 : interval);
+            MThread.sleepForSure(!enabled ? 30000 : interval);
         }
     }
     
     public void pushAll() {
-        if (disabled) {
+        if (!enabled) {
             log().i(this,"disabled");
             return;
         }
@@ -112,7 +135,7 @@ public class Job extends MLog implements Runnable {
         for (Watch watch : watches)
             try {
                 if (!isRunning) break;
-                if (!watch.isDisabled()) {
+                if (watch.isEnabled()) {
                     log().i(this,watch,"pushAll");
                     watch.pushAll();
                 }
@@ -124,7 +147,7 @@ public class Job extends MLog implements Runnable {
     }
    
     public void push() {
-        if (disabled) {
+        if (!enabled) {
             log().i(this,"disabled");
             return;
         }
@@ -133,7 +156,7 @@ public class Job extends MLog implements Runnable {
         for (Watch watch : watches)
             try {
                 if (!isRunning) break;
-                if (!watch.isDisabled()) {
+                if (watch.isEnabled()) {
                     log().i(this,watch,"push");
                     watch.push(lastUpdated);
                 } else
@@ -145,14 +168,34 @@ public class Job extends MLog implements Runnable {
         saveLastUpdated();
     }
 
+    public void test() {
+        if (!enabled) {
+            log().i(this,"disabled");
+            return;
+        }
+        lastUpdateStart = new Date();
+        
+        for (Watch watch : watches)
+            try {
+                if (!isRunning) break;
+                if (watch.isEnabled()) {
+                    log().i(this,watch,"push");
+                    watch.test(lastUpdated);
+                } else
+                    log().i(this,watch,"disabled");
+            } catch (Throwable t) {
+                log().e(t,name,this,watch.getName());
+            }
+    }
+    
     public void init() {
-        if (disabled) {
+        if (!enabled) {
             log().i(this,"disabled init");
             return;
         }
         for (Watch watch : watches)
             try {
-                if (!watch.isDisabled()) {
+                if (watch.isEnabled()) {
                     log().i(this,watch,"init");
                     watch.init(lastUpdated);
                 }
@@ -248,8 +291,8 @@ public class Job extends MLog implements Runnable {
         return fileCnt.value;
     }
     
-    public boolean isDisabled() {
-        return disabled;
+    public boolean isEnabled() {
+        return enabled;
     }
     
     @Override
@@ -261,5 +304,19 @@ public class Job extends MLog implements Runnable {
         lastUpdated = time;
         saveLastUpdated();
     }
-        
+ 
+    public List<String> kubectl(boolean container) {
+        LinkedList<String> cmd = new LinkedList<>();
+        cmd.add( getConfig().getString("kubectl", "kubectl"));
+        if (getNamespace() != null) {
+            cmd.add("--namespace");
+            cmd.add(getNamespace()); 
+        }
+        if (container && getContainer() != null) {
+            cmd.add("-c");
+            cmd.add(getContainer());
+        }
+        return cmd;
+    }
+    
 }

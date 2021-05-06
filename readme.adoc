@@ -42,7 +42,7 @@ For each job push a yaml file in the configuration folder.
 |namespace  |Text   |Kubernetes namespace
 |pod        |*Text  |Kubernetes name of the pod
 |container  |Text   |Kubernetes container inside of the pod
-|disabled   |Boolean|Disable the job (default false)
+|enabled    |Boolean|Disable the job (default true)
 |===
 
 === Watch Section
@@ -55,7 +55,7 @@ For each job push a yaml file in the configuration folder.
 |filter     |List   |List of filters to filter the local files and directories
 |algorithm  |Text   |Implementation to use to watch and transport files, default 'simple'
 |interval   |Number |Interval in milliseconds to wait between file scans in watch mode, default global interval
-|disabled   |Boolean|Disable the watch section (default false)
+|enabled    |Boolean|Disable the watch section (default true)
 |===
 
 === Filters
