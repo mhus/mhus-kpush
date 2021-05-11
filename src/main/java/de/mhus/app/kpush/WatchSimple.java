@@ -84,7 +84,7 @@ public class WatchSimple extends Watch {
         forEachSourceFile( (f,n) -> {
             if (f.lastModified() > lastUpdated) {
                 todoCnt--; 
-                log().i(job,name,"Update",todoCnt,n);
+                log().i(job,name,"Push",todoCnt,n);
                 pushToK8s(f, n);
             }
         });
@@ -117,7 +117,7 @@ public class WatchSimple extends Watch {
         });
         forEachSourceFile( (f,n) -> {
             todoCnt--; 
-            log().i(job,name,"Update",todoCnt,n);
+            log().i(job,name,"Push",todoCnt,n);
             pushToK8s(f,n);
         });
     }

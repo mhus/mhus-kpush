@@ -168,19 +168,18 @@ public class Job extends MLog implements Runnable {
         saveLastUpdated();
     }
 
-    public void test() {
+    public void test(long updated) {
         if (!enabled) {
             log().i(this,"disabled");
             return;
         }
-        lastUpdateStart = new Date();
-        
+        if (updated <= 0) updated = lastUpdated;
         for (Watch watch : watches)
             try {
                 if (!isRunning) break;
                 if (watch.isEnabled()) {
-                    log().i(this,watch,"push");
-                    watch.test(lastUpdated);
+                    log().i(this,watch,"test");
+                    watch.test(updated);
                 } else
                     log().i(this,watch,"disabled");
             } catch (Throwable t) {

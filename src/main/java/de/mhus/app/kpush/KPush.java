@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import de.mhus.lib.core.M;
 import de.mhus.lib.core.MArgs;
 import de.mhus.lib.core.MCollection;
+import de.mhus.lib.core.MDate;
 import de.mhus.lib.core.MFile;
 import de.mhus.lib.core.MLog;
 import de.mhus.lib.core.MPeriod;
@@ -14,6 +15,7 @@ import de.mhus.lib.core.console.Console;
 import de.mhus.lib.core.console.ConsoleTable;
 import de.mhus.lib.core.node.INode;
 import de.mhus.lib.core.node.INodeFactory;
+import de.mhus.lib.core.util.Value;
 
 public class KPush extends MLog {
 
@@ -80,14 +82,20 @@ public class KPush extends MLog {
         String back = getArguments().getValue("t", "", 0);
         if (MString.isSet(back)) {
             final long time = System.currentTimeMillis() - MPeriod.toTime(back, 0);
-            log().i("Touch");
+            log().i("Touch",MDate.toIso8601(time));
             jobs.forEach(j -> j.touchTime(time));
         }
         jobs.forEach(j -> j.push());
     }
     
     public void test() {
-        jobs.forEach(j -> j.test());
+        String back = getArguments().getValue("t", "", 0);
+        Value<Long> time = new Value<>(0l);
+        if (MString.isSet(back)) {
+            time.value = System.currentTimeMillis() - MPeriod.toTime(back, 0);
+            log().i("Since", MDate.toIso8601(time.value));
+        }
+        jobs.forEach(j -> j.test(time.value));
     }
     
     public void pushAll() {
