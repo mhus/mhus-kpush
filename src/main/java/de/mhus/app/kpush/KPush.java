@@ -28,8 +28,8 @@ public class KPush extends MLog {
     
     public void init() throws Exception {
         
-        interval = M.to(getArguments().getValue("i", 0), 5000 );
-        jobFilter = getArguments().getValues(MArgs.DEFAULT);
+        interval = M.to(getArguments().getOption("i").getValue(), 5000 );
+        jobFilter = getArguments().getArgument(1).getValues().toArray(new String[0]);
         if (jobFilter.length > 0)
             jobFilter = MCollection.cropArray(jobFilter, 1, jobFilter.length);
         for (int i = 0; i < jobFilter.length; i++) {
@@ -41,7 +41,7 @@ public class KPush extends MLog {
         homeDir = System.getenv("KPUSH_HOME");
         if (homeDir == null)
             homeDir = "~/.kpush";
-        String configDir = args.getValue("c", 0);
+        String configDir = args.getArgument("c").getValue();
         if (configDir == null)
             this.configDir = MFile.toFile(homeDir + "/config");
         else
@@ -79,7 +79,7 @@ public class KPush extends MLog {
 
     public void push() {
         
-        String back = getArguments().getValue("t", "", 0);
+        String back = getArguments().getOption("t").getValue();
         if (MString.isSet(back)) {
             final long time = System.currentTimeMillis() - MPeriod.toTime(back, 0);
             log().i("Touch",MDate.toIso8601(time));
@@ -89,7 +89,7 @@ public class KPush extends MLog {
     }
     
     public void test() {
-        String back = getArguments().getValue("t", "", 0);
+        String back = getArguments().getOption("t").getValue();
         Value<Long> time = new Value<>(0l);
         if (MString.isSet(back)) {
             time.value = System.currentTimeMillis() - MPeriod.toTime(back, 0);
@@ -161,7 +161,7 @@ public class KPush extends MLog {
     }
     
     public void touch() {
-        String back = getArguments().getValue("t", "0", 0);
+        String back = getArguments().getOption("t").getValue();
         final long time = System.currentTimeMillis() - MPeriod.toTime(back, 0);
         jobs.forEach(j -> j.touchTime(time));
     }

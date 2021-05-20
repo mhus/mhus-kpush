@@ -57,10 +57,7 @@ public class Job extends MLog implements Runnable {
         interval = config.getLong("interval", kpush.getInterval());
         
         lastUpdatedFile = new File(getConfigFile().getParent(), MFile.getFileNameOnly( "kpush." + getConfigFile().getName() ) + ".dat" );
-        if (getKPush().getArguments().contains("r"))
-            lastUpdated = 0;
-        else
-            loadLastUpdated();
+        loadLastUpdated();
         
         if (pod.startsWith("$")) {
             List<String> cmd = kubectl(false);

@@ -20,6 +20,7 @@ Usage:
 |-i         |Global interval in milliseconds to wait between status output in watch mode, default 5000 (5sec)
 |-v <level> |Set the log level: trace, debug, info (default), warn, error, fatal
 |-t <period>|A period of time backward for the command touch, e.g. 2h, 1d, 2w, 30min
+|test       |Test which files would be pushed, you can use also option t to modify the last update time.
 |push       |Command push once
 |pushall    |Command push all data
 |watch      |Command push every second in a loop, press Ctrl-C to exit
@@ -89,8 +90,6 @@ If init is enabled, initial it will transport only non existing files.
 |===
 
 The additional parameter in `Main Section` named `kubectl` can be used to change the path to the kubectl binary.
-
-The additional program argument `-r` can be used to recreate all files (sets sync time to zero).
 
 === Example
 

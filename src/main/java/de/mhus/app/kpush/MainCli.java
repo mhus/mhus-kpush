@@ -9,9 +9,19 @@ public class MainCli {
 
     public static void main(String[] args) throws Exception {
         
-        MArgs margs = new MArgs(args);
+        MArgs margs = new MArgs(args,
+        		MArgs.help("Tool to watch and push changed files in a kubernetes pod"),
+        		MArgs.optVal("l", "Log level trace, debug, info, warn, error, fatal, default is INFO"),
+        		MArgs.optVal("t", "Time interval, e.g. 1d, 1h, 1min, default is now"),
+        		MArgs.optVal("i", "Interval in milliseconds for watch command, default is 5000"),
+        		MArgs.optVal("c", "Configuration directory or file, default is '~/.kpush/config'"),
+        		MArgs.arg("cmd", "Command:\ntest - Test push\ntouch - Touch sync to time interval\npush - Push files changed since last push,\npushall - Push all files\nwatch - Watch all files in a loop"),
+        		MArgs.argAll("filter", "Filter configurations")
+        		);
+        if (!margs.isValid())
+        	System.exit(1);
         
-        String verbose = margs.getValue("v", null, 0);
+        String verbose = margs.getOption("v").getValue();
         if (verbose != null) {
             MApi.setDirtyTrace(false);
             LEVEL level = Log.LEVEL.DEBUG;
@@ -33,8 +43,7 @@ public class MainCli {
         inst.setArguments(margs);
         inst.init();
         
-        String action = margs.getValue(MArgs.DEFAULT, 0);
-        if (action == null) action = "push";
+        String action = margs.getArgument(1).getValue("push");
         switch (action) {
         case "test":
             inst.test();
