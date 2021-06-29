@@ -57,7 +57,11 @@ public class Job extends MLog implements Runnable {
         interval = config.getLong("interval", kpush.getInterval());
         
         lastUpdatedFile = new File(getConfigFile().getParent(), MFile.getFileNameOnly( "kpush." + getConfigFile().getName() ) + ".dat" );
-        loadLastUpdated();
+
+        if (getKPush().getArguments().getOption("r").isSet())
+            lastUpdated = 0;
+        else
+            loadLastUpdated();
         
         if (pod.startsWith("$")) {
             List<String> cmd = kubectl(false);
@@ -245,10 +249,14 @@ public class Job extends MLog implements Runnable {
         return kpush;
     }
     
-    public Date getLastUpdate() {
+    public Date getLastUpdateStart() {
         return lastUpdateStart;
     }
 
+    public long getLastUpdated() {
+        return lastUpdated;
+    }
+    
     private void loadLastUpdated() {
         if (!getConfig().getBoolean("rememberLastUpdated", true)) return;
         if (lastUpdatedFile.exists() && lastUpdatedFile.isFile()) {

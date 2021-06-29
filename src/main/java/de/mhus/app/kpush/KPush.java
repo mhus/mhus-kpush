@@ -2,6 +2,7 @@ package de.mhus.app.kpush;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
 
 import de.mhus.lib.core.M;
 import de.mhus.lib.core.MArgs;
@@ -29,9 +30,7 @@ public class KPush extends MLog {
     public void init() throws Exception {
         
         interval = M.to(getArguments().getOption("i").getValue(), 5000 );
-        jobFilter = getArguments().getArgument(1).getValues().toArray(new String[0]);
-        if (jobFilter.length > 0)
-            jobFilter = MCollection.cropArray(jobFilter, 1, jobFilter.length);
+        jobFilter = getArguments().getArgument(2).getValues().toArray(new String[0]);
         for (int i = 0; i < jobFilter.length; i++) {
             jobFilter[i] = jobFilter[i].toUpperCase();
             if (jobFilter[i].endsWith(".YAML"))
@@ -41,7 +40,7 @@ public class KPush extends MLog {
         homeDir = System.getenv("KPUSH_HOME");
         if (homeDir == null)
             homeDir = "~/.kpush";
-        String configDir = args.getArgument("c").getValue();
+        String configDir = args.getOption("c").getValue();
         if (configDir == null)
             this.configDir = MFile.toFile(homeDir + "/config");
         else
@@ -64,6 +63,12 @@ public class KPush extends MLog {
                 
                 loadConfig(file);
             }
+        jobs.sort(new Comparator<Job>() {
+            @Override
+            public int compare(Job o1, Job o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
     }
     
     private Job loadConfig(File file) throws Exception {
@@ -124,7 +129,7 @@ public class KPush extends MLog {
                         j.getFileCnt(), 
                         j.getFileTransferred(), 
                         j.getFileErrors(),
-                        j.getLastUpdate() 
+                        j.getLastUpdateStart() 
                         ) );
                 table.print();
                 
@@ -187,6 +192,23 @@ public class KPush extends MLog {
 
     public long getInterval() {
         return interval;
+    }
+
+    public void showInfo() {
+        if (jobFilter.length == 0) {
+            jobs.forEach(j -> System.out.println(MDate.toIsoDateTime(j.getLastUpdated()) + " " + j.getName()) );
+        } else {
+            jobs.forEach(j -> {
+                System.out.println("Target: " + j.getName());
+                System.out.println("  Last updated: " + MDate.toIsoDateTime(j.getLastUpdated()));
+                System.out.println("  File        : " + j.getConfigFile());
+                System.out.println("  Namespace   : " + j.getNamespace());
+                System.out.println("  Pod         : " + j.getPod());
+                System.out.println("  Container   : " + j.getContainer());
+            }
+            );
+            
+        }
     }
 
 }

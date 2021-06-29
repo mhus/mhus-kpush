@@ -15,10 +15,11 @@ Usage:
 ----
 
 |===
-|Argument   |Description
+|Argument/Option   |Description
+|--help     |Show usage
 |-c         |Set the configuration directory or file, defaut `~/.kpush/config`
 |-i         |Global interval in milliseconds to wait between status output in watch mode, default 5000 (5sec)
-|-v <level> |Set the log level: trace, debug, info (default), warn, error, fatal
+|-l <level> |Set the log level: trace, debug, info (default), warn, error, fatal
 |-t <period>|A period of time backward for the command touch, e.g. 2h, 1d, 2w, 30min
 |test       |Test which files would be pushed, you can use also option t to modify the last update time.
 |push       |Command push once
@@ -26,6 +27,7 @@ Usage:
 |watch      |Command push every second in a loop, press Ctrl-C to exit
 |touch      |Command touch the update time to now, use option -t
 |reset      |Command set the update time to 1970
+|info       |Command to show current target configuration and the last update time
 |job filter |List of jobs to execute. All other jobs will be ignored. By default all jobs will be executed.
 |===
 
