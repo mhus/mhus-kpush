@@ -17,14 +17,14 @@
 
 # config
 
-REPO_PATH_ZIP="de/mhus/app/mhus-kpush/1.0.0-SNAPSHOT/mhus-kpush-1.0.0-SNAPSHOT-install.zip"
+REPO_PATH_ZIP="de/mhus/app/mhus-kpush/1.0.0/mhus-kpush-1.0.0-install.zip"
 LOCAL_REPO_PATH_ZIP="$HOME/.m2/repository/$REPO_PATH_ZIP"
 REMOTE_REPO_PATH_ZIP="https://repo1.maven.org/maven2/$REPO_PATH_ZIP"
 
 # init
 
-if [ ! -d $HOME/.kpush/bin/1.0.0-SNAPSHOT ]; then
-  mkdir -p $HOME/.kpush/bin/1.0.0-SNAPSHOT
+if [ ! -d $HOME/.kpush/bin/1.0.0 ]; then
+  mkdir -p $HOME/.kpush/bin/1.0.0
 fi
 if [ ! -d $HOME/.kpush/config ]; then
   mkdir -p $HOME/.kpush/config
@@ -38,7 +38,7 @@ fi
 if [ ! -e $LOCAL_REPO_PATH_ZIP ]; then
   if command -v mvn &> /dev/null; then
     mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
-      -Dartifact=de.mhus.app:mhus-kpush:1.0.0-SNAPSHOT:zip:install
+      -Dartifact=de.mhus.app:mhus-kpush:1.0.0:zip:install
   elif command -v curl &> /dev/null; then
     if [ -e $HOME/.kpush/tmp/kpush-install.zip ]; then
       rm $HOME/.conductor/tmp/jpush-install.zip
@@ -59,14 +59,14 @@ fi
 
 # unpack and setup
 
-cd $HOME/.kpush/bin/1.0.0-SNAPSHOT
+cd $HOME/.kpush/bin/1.0.0
 unzip -o $LOCAL_REPO_PATH_ZIP
-chmod +x $HOME/.kpush/bin/1.0.0-SNAPSHOT/*.sh
+chmod +x $HOME/.kpush/bin/1.0.0/*.sh
 
 if [ -e $HOME/.kpush/bin/con ]; then
   rm $HOME/.kpush/bin/con
 fi
-ln -s $HOME/.kpush/bin/1.0.0-SNAPSHOT/kpush.sh $HOME/.kpush/bin/kpush
+ln -s $HOME/.kpush/bin/1.0.0/kpush.sh $HOME/.kpush/bin/kpush
 
 # cleanup
 
@@ -74,5 +74,5 @@ if [ -e $HOME/.conductor/tmp/kpush-install.zip ]; then
   rm $HOME/.conductor/tmp/kpush-install.zip
 fi
 
-echo "Installed 1.0.0-SNAPSHOT in $HOME/.kpush"
+echo "Installed 1.0.0 in $HOME/.kpush"
 echo "Add directory $HOME/.kpush/bin to \$PATH or link $HOME/.kpush/bin/kpush in a binary directory like /usr/local/bin"

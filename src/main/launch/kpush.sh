@@ -87,7 +87,7 @@ if [ ! -x "$JAVACMD" ] ; then
   exit 1
 fi
 
-KPUSH_JAR=`echo "${KPUSH_HOME}"/bin/1.0.0-SNAPSHOT/kpush.jar`
+KPUSH_JAR=`echo "${KPUSH_HOME}"/bin/1.0.0/kpush.jar`
 
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin ; then
