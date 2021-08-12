@@ -21,11 +21,11 @@
 	<modelVersion>4.0.0</modelVersion>
     <parent>
 		<groupId>de.mhus.lib</groupId>
-		<version>7.4.0-SNAPSHOT</version>
+		<version>7.4.1</version>
 	    <artifactId>mhus-oss</artifactId>
     </parent>
     <groupId>de.mhus.app</groupId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
 	<artifactId>mhus-kpush</artifactId>
 	<description>Application to push files into existing kubernetes containers</description>
 	<url>http://www.mhus.info</url>
